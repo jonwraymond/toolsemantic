@@ -6,17 +6,17 @@ PRD: docs/plans/2026-01-29-prd-001-toolsemantic-library.md
 
 ## Overview
 
-Implement semantic search interfaces and an in-memory indexing/search strategy
-with deterministic ranking and composable scoring.
+Implement semantic indexing and retrieval interfaces with deterministic ranking
+and composable scoring strategies.
 
 ## TDD Methodology
 
 Each task follows strict TDD:
-1. Red — Write failing test
-2. Red verification — Run test, confirm failure
-3. Green — Minimal implementation
-4. Green verification — Run test, confirm pass
-5. Commit — One commit per task
+1. Red — write failing test
+2. Red verification — run test, confirm failure
+3. Green — minimal implementation
+4. Green verification — run test, confirm pass
+5. Commit — one commit per task
 
 ---
 
@@ -30,7 +30,8 @@ Commit:
 ## Task 1 — Document Model
 
 Tests:
-- Normalization is deterministic
+- TestDocument_NormalizeText
+- TestDocument_TagsSorted
 
 Commit:
 - feat(toolsemantic): add document model
@@ -40,27 +41,31 @@ Commit:
 ## Task 2 — Indexer
 
 Tests:
-- Add/update/remove documents
+- TestIndexer_AddUpdateRemove
+- TestIndexer_DedupByID
 
 Commit:
-- feat(toolsemantic): add indexer
+- feat(toolsemantic): add in-memory indexer
 
 ---
 
 ## Task 3 — Searcher
 
 Tests:
-- Deterministic ordering and tie-breakers
+- TestSearcher_DeterministicOrdering
+- TestSearcher_TieBreakByID
 
 Commit:
-- feat(toolsemantic): add searcher
+- feat(toolsemantic): add searcher interface
 
 ---
 
 ## Task 4 — Strategy Composition
 
 Tests:
-- BM25-only, embeddings-only, hybrid weighting
+- TestStrategy_BM25Only
+- TestStrategy_EmbeddingOnly
+- TestStrategy_HybridWeights
 
 Commit:
 - feat(toolsemantic): add scoring strategies
@@ -70,7 +75,9 @@ Commit:
 ## Task 5 — Filters
 
 Tests:
-- Namespace/tag/category filter correctness
+- TestFilter_Namespace
+- TestFilter_Tags
+- TestFilter_Category
 
 Commit:
 - feat(toolsemantic): add filters
@@ -96,7 +103,7 @@ Commit:
 ## Stack Integration
 
 1. Add ai-tools-stack component docs + D2 diagram
-2. Add mkdocs import for toolsemantic repo
+2. Add mkdocs multirepo import
 3. After first release, update version matrix
 
 ---
@@ -105,8 +112,8 @@ Commit:
 
 1. chore(toolsemantic): scaffold module and docs
 2. feat(toolsemantic): add document model
-3. feat(toolsemantic): add indexer
-4. feat(toolsemantic): add searcher
+3. feat(toolsemantic): add in-memory indexer
+4. feat(toolsemantic): add searcher interface
 5. feat(toolsemantic): add scoring strategies
 6. feat(toolsemantic): add filters
 7. docs(toolsemantic): finalize documentation

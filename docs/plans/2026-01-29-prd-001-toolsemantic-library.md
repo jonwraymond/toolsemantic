@@ -2,13 +2,13 @@
 
 > **For agents:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Build a semantic search library for tools that supports pluggable
-indexing and retrieval strategies (BM25, embeddings, hybrid).
+**Goal:** Build a semantic search library for tools with pluggable indexing and
+retrieval strategies (BM25, embeddings, hybrid).
 
-**Architecture:** Provide interfaces for indexing and searching tool documents,
-with optional embedding generation. No hard dependency on a vector database.
+**Architecture:** Provide a document model, indexing interface, search interface,
+and composable scoring strategies. No vector database dependency is required.
 
-**Tech Stack:** Go 1.24+, optional integration with `toolsearch` (BM25)
+**Tech Stack:** Go 1.24+, optional integration with `toolsearch` (BM25).
 
 **Priority:** P2 (Phase 4 in the plan-of-record)
 
@@ -17,36 +17,56 @@ with optional embedding generation. No hard dependency on a vector database.
 ## Context and Stack Alignment
 
 toolsemantic extends discovery by enabling semantic retrieval over tool metadata
-and schema summaries. It complements `toolsearch` and can consume tool documents
+and schema summaries. It complements `toolsearch` and consumes tool documents
 from `toolindex`.
 
 ---
 
-## Scope
+## Requirements
 
-### In scope
-- Tool document model
-- Indexer and Searcher interfaces
-- Embedding interface (caller-provided)
-- Hybrid ranking strategy (BM25 + embeddings)
-- Filtering by namespace/tags/category
-- Unit tests for deterministic ranking
-- Docs and examples
+### Functional
 
-### Out of scope
-- Vector database implementation
-- Embedding provider SDK integration
-- Online training or fine-tuning
+1. Document model for tool metadata.
+2. Indexer interface with add/update/remove.
+3. Searcher interface with deterministic ranking.
+4. Strategy composition: BM25-only, embedding-only, hybrid.
+5. Filters by namespace/tags/category.
+
+### Non-functional
+
+- Deterministic ordering with explicit tie-breakers.
+- Backend-agnostic (no vector DB dependency).
+- Thread-safe for concurrent queries.
 
 ---
 
-## Design Principles
+## Document Model
 
-1. **Backend agnostic**: avoid vendor-specific dependencies.
-2. **Deterministic results**: stable ranking and tie-breakers.
-3. **Composable scoring**: BM25, vector, hybrid.
-4. **Minimal dependencies**: core Go only.
-5. **Safe defaults**: small indexes must be fast and memory-safe.
+```go
+// Document describes a tool for semantic indexing.
+type Document struct {
+    ID          string
+    Namespace   string
+    Name        string
+    Description string
+    Tags        []string
+    Category    string
+    Text        string // normalized combined text
+}
+```
+
+Normalization rules:
+- `Text` is built from name + description + tags.
+- Tags are lowercased, sorted for stability.
+
+---
+
+## Scoring Rules
+
+- BM25 score uses `toolsearch` (if configured).
+- Embedding similarity uses cosine similarity.
+- Hybrid score = `alpha * bm25 + (1 - alpha) * cosine`.
+- Tie-breaker: lexicographic `Document.ID`.
 
 ---
 
@@ -72,66 +92,97 @@ toolsemantic/
 
 ---
 
-## API Shape (Conceptual)
-
-```go
-// Document describes a tool for semantic indexing.
-type Document struct {
-    ID          string
-    Namespace   string
-    Name        string
-    Description string
-    Tags        []string
-}
-
-// Embedder provides embeddings for text.
-type Embedder interface {
-    Embed(ctx context.Context, text string) ([]float32, error)
-}
-```
-
----
-
-## Tasks (TDD)
+## TDD Task Breakdown (Detailed)
 
 ### Task 1 — Document Model
 
-- Define `Document` and normalization helpers
-- Tests: deterministic normalization
+**Files:** `document.go`, `document_test.go`
 
-### Task 2 — Indexer Interface
+**Tests:**
+- `TestDocument_NormalizeText`
+- `TestDocument_TagsSorted`
 
-- Define indexer interface and in-memory index
-- Tests: add/update/remove
+**Commit:** `feat(toolsemantic): add document model`
 
-### Task 3 — Searcher Interface
+---
 
-- Define searcher with scoring + ranking
-- Tests: deterministic ordering and tie-breaking
+### Task 2 — Indexer
+
+**Files:** `indexer.go`, `indexer_test.go`
+
+**Tests:**
+- `TestIndexer_AddUpdateRemove`
+- `TestIndexer_DedupByID`
+
+**Commit:** `feat(toolsemantic): add in-memory indexer`
+
+---
+
+### Task 3 — Searcher
+
+**Files:** `searcher.go`, `searcher_test.go`
+
+**Tests:**
+- `TestSearcher_DeterministicOrdering`
+- `TestSearcher_TieBreakByID`
+
+**Commit:** `feat(toolsemantic): add searcher interface`
+
+---
 
 ### Task 4 — Strategy Composition
 
-- BM25-only, embeddings-only, hybrid strategy
-- Tests: correct weighting behavior
+**Files:** `strategy.go`, `strategy_test.go`
+
+**Tests:**
+- `TestStrategy_BM25Only`
+- `TestStrategy_EmbeddingOnly`
+- `TestStrategy_HybridWeights`
+
+**Commit:** `feat(toolsemantic): add scoring strategies`
+
+---
 
 ### Task 5 — Filters
 
-- Namespace/tag/category filters
-- Tests: filter correctness
+**Files:** `filter.go`, `filter_test.go`
+
+**Tests:**
+- `TestFilter_Namespace`
+- `TestFilter_Tags`
+- `TestFilter_Category`
+
+**Commit:** `feat(toolsemantic): add filters`
+
+---
 
 ### Task 6 — Docs + Examples
 
-- Update README and docs/index.md
-- Add Mermaid flow diagram
-- Add D2 component diagram in ai-tools-stack
+**Files:** `README.md`, `docs/index.md`, `docs/user-journey.md`
+
+**Acceptance:** Mermaid diagram and quick start examples included. Add D2
+component diagram in ai-tools-stack.
+
+**Commit:** `docs(toolsemantic): finalize documentation`
+
+---
+
+## PR Process
+
+1. Create branch: `feat/toolsemantic-<task>`
+2. Implement TDD task in isolation
+3. Run: `go test -race ./...`
+4. Commit with scoped message
+5. Open PR against `main`
+6. Merge after CI green
 
 ---
 
 ## Versioning and Propagation
 
-- **Source of truth**: `ai-tools-stack/go.mod`
-- **Version matrix**: `ai-tools-stack/VERSIONS.md` (auto-synced)
-- **Propagation**: `ai-tools-stack/scripts/update-version-matrix.sh --apply`
+- **Source of truth:** `ai-tools-stack/go.mod`
+- **Matrix:** `ai-tools-stack/VERSIONS.md` (auto-synced)
+- **Propagation:** `ai-tools-stack/scripts/update-version-matrix.sh --apply`
 - Tags: `vX.Y.Z` and `toolsemantic-vX.Y.Z`
 
 ---
@@ -139,15 +190,15 @@ type Embedder interface {
 ## Integration with metatools-mcp
 
 - Provide semantic search provider for tool discovery.
-- Use `toolindex` as a source of tool documents.
-- Configuration should allow choosing BM25 vs semantic strategy.
+- Use `toolindex` as source of tool documents.
+- Config allows BM25-only or hybrid strategy.
 
 ---
 
 ## Definition of Done
 
-- All TDD tasks complete with tests passing
+- All tasks complete with tests passing
 - `go test -race ./...` succeeds
-- Docs include quick start + diagrams
+- Docs + diagrams updated in ai-tools-stack
 - CI green
 - Version matrix updated after first release
