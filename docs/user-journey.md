@@ -8,21 +8,33 @@ You want to retrieve tools by intent rather than exact name matching. The query
 ## Step 1: Build a semantic index
 
 ```go
-index := toolsemantic.NewIndex()
-index.Add(toolDoc)
+idx := toolsemantic.NewInMemoryIndex()
+_ = idx.Add(ctx, toolsemantic.Document{
+    ID:          "docs:summarize",
+    Namespace:   "docs",
+    Name:        "summarize",
+    Description: "Summarize a document",
+    Tags:        []string{"summarize", "read"},
+})
 ```
 
 ## Step 2: Query the index
 
 ```go
-searcher := toolsemantic.NewSearcher(index)
-results, _ := searcher.Query(ctx, "summarize meeting notes")
+strategy := toolsemantic.NewBM25Strategy(nil)
+searcher := toolsemantic.NewSearcher(idx, strategy)
+results, _ := searcher.Search(ctx, "summarize meeting notes")
 ```
 
 ## Step 3: Filter results
 
 ```go
-filtered := toolsemantic.FilterByNamespace(results, "docs")
+filtered := make([]toolsemantic.Result, 0, len(results))
+for _, r := range results {
+    if r.Document.Namespace == "docs" {
+        filtered = append(filtered, r)
+    }
+}
 ```
 
 ## Flow Diagram

@@ -22,6 +22,44 @@ binding to a vector database. Callers provide embedding and storage backends.
 toolindex --> toolsemantic --> search backends
 ```
 
+## Installation
+
+```bash
+go get github.com/jonwraymond/toolsemantic
+```
+
+## Quick Start
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+
+    "github.com/jonwraymond/toolsemantic"
+)
+
+func main() {
+    idx := toolsemantic.NewInMemoryIndex()
+    _ = idx.Add(context.Background(), toolsemantic.Document{
+        ID:          "docs:summarize",
+        Namespace:   "docs",
+        Name:        "summarize",
+        Description: "Summarize a document",
+        Tags:        []string{"summarize", "read"},
+    })
+
+    strategy := toolsemantic.NewBM25Strategy(nil)
+    searcher := toolsemantic.NewSearcher(idx, strategy)
+    results, _ := searcher.Search(context.Background(), "summarize documents")
+
+    for _, r := range results {
+        fmt.Println(r.Document.ID, r.Score)
+    }
+}
+```
+
 ## Versioning
 
 toolsemantic follows semantic versioning aligned with the stack. The source of

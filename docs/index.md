@@ -34,11 +34,18 @@ toolindex --> toolsemantic --> search backends
 ## Quick Start
 
 ```go
-index := toolsemantic.NewIndex()
-index.Add(toolDoc)
+idx := toolsemantic.NewInMemoryIndex()
+_ = idx.Add(ctx, toolsemantic.Document{
+    ID:          "weather:get",
+    Namespace:   "weather",
+    Name:        "get",
+    Description: "Get weather for a location",
+    Tags:        []string{"read", "weather"},
+})
 
-results, _ := toolsemantic.NewSearcher(index).
-    Query(ctx, "find weather tools")
+strategy := toolsemantic.NewBM25Strategy(nil)
+searcher := toolsemantic.NewSearcher(idx, strategy)
+results, _ := searcher.Search(ctx, "find weather tools")
 ```
 
 ## Versioning
