@@ -13,11 +13,20 @@ var (
 )
 
 // BM25Scorer scores documents for a query using a lexical strategy.
+//
+// Contract:
+// - Concurrency: implementations must be safe for concurrent use.
+// - Determinism: identical inputs must yield stable scores.
 type BM25Scorer interface {
 	Score(query string, doc Document) float64
 }
 
 // Embedder produces embeddings for text.
+//
+// Contract:
+// - Concurrency: implementations must be safe for concurrent use.
+// - Context: must honor cancellation/deadlines.
+// - Errors: return an error for invalid input or provider failure.
 type Embedder interface {
 	Embed(ctx context.Context, text string) ([]float32, error)
 }

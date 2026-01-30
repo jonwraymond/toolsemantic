@@ -58,3 +58,15 @@ func TestIndexer_DedupByID(t *testing.T) {
 		t.Fatalf("expected Name=Second, got %q", docs[0].Name)
 	}
 }
+
+func TestIndexerContract_InvalidID(t *testing.T) {
+	idx := NewInMemoryIndex()
+	ctx := context.Background()
+
+	if err := idx.Add(ctx, Document{}); err == nil {
+		t.Fatalf("expected error for empty ID")
+	}
+	if err := idx.Remove(ctx, ""); err == nil {
+		t.Fatalf("expected error for empty ID on remove")
+	}
+}

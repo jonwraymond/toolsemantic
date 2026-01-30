@@ -15,11 +15,21 @@ type Result struct {
 }
 
 // Strategy scores a document for a given query.
+//
+// Contract:
+// - Concurrency: implementations must be safe for concurrent use.
+// - Context: must honor cancellation/deadlines.
+// - Determinism: identical inputs must yield stable scores.
 type Strategy interface {
 	Score(ctx context.Context, query string, doc Document) (float64, error)
 }
 
 // Searcher performs semantic search over indexed documents.
+//
+// Contract:
+// - Concurrency: implementations must be safe for concurrent use.
+// - Context: must honor cancellation/deadlines.
+// - Determinism: ordering must be stable for identical inputs.
 type Searcher interface {
 	Search(ctx context.Context, query string) ([]Result, error)
 }

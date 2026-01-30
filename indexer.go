@@ -10,6 +10,12 @@ import (
 var ErrInvalidDocumentID = errors.New("toolsemantic: document id is required")
 
 // Indexer defines indexing operations for tool documents.
+//
+// Contract:
+// - Concurrency: implementations must be safe for concurrent use.
+// - Context: methods must honor cancellation/deadlines where applicable.
+// - Errors: invalid IDs should return ErrInvalidDocumentID.
+// - Determinism: List returns stable ordering.
 type Indexer interface {
 	Add(ctx context.Context, doc Document) error
 	Update(ctx context.Context, doc Document) error

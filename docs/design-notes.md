@@ -22,3 +22,24 @@
 - `toolindex`: source of tool documents.
 - `toolsearch`: optional BM25 implementation for baseline ranking.
 - `metatools-mcp`: provider layer can call semantic search.
+
+## Interface Contracts
+
+### Indexer
+
+- **Concurrency:** implementations are safe for concurrent use.
+- **Context:** methods honor cancellation/deadlines where applicable.
+- **Errors:** invalid IDs return `ErrInvalidDocumentID`.
+- **Determinism:** `List` returns stable ordering.
+
+### Searcher
+
+- **Concurrency:** implementations are safe for concurrent use.
+- **Context:** methods honor cancellation/deadlines.
+- **Determinism:** ordering is stable for identical inputs.
+
+### Strategy / BM25Scorer / Embedder
+
+- **Concurrency:** implementations are safe for concurrent use.
+- **Context:** `Embed`/`Score` honor cancellation/deadlines.
+- **Determinism:** identical inputs yield stable scores.
